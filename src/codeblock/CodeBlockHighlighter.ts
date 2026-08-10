@@ -25,9 +25,7 @@ function createHeadElement<K extends keyof HTMLElementTagNameMap>(
     }
   ).win;
 
-  return win?.createEl
-    ? win.createEl(tag)
-    : doc.createElement(tag);
+  return win?.createEl ? win.createEl(tag) : doc.createElement(tag);
 }
 
 export class CodeBlockHighlighter {

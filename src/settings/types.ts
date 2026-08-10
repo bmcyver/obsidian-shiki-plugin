@@ -17,6 +17,7 @@ export interface Settings {
   lightTheme: string;
   ecDefaultShowLineNumbers: boolean;
   ecDefaultWrap: boolean;
+  pdfExportWrap: boolean;
   ecDefaultFrame: FrameType;
   ecDefaultCollapseStyle: CollapseStyle;
 }
@@ -26,6 +27,7 @@ export const DEFAULT_SETTINGS: Settings = {
   lightTheme: 'one-light',
   ecDefaultShowLineNumbers: false,
   ecDefaultWrap: false,
+  pdfExportWrap: true,
   ecDefaultFrame: FrameType.Auto,
   ecDefaultCollapseStyle: CollapseStyle.CollapsibleAuto,
 };

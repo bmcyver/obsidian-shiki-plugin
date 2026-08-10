@@ -193,4 +193,3 @@ export function estimateCodeBlockHeight(
   const lineHeight = 20;
   return Math.round(lineCount * lineHeight + paddingAndBorders + headerHeight);
 }
-

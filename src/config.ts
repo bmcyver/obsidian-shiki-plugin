@@ -7,6 +7,7 @@ import { pluginFrames } from '@expressive-code/plugin-frames';
 import { pluginLineNumbers } from '@expressive-code/plugin-line-numbers';
 import { pluginTextMarkers } from '@expressive-code/plugin-text-markers';
 import { customPluginPrism } from './prism/CustomPluginPrism';
+import { pluginPdfExportWrap } from './plugins/pluginPdfExportWrap';
 import { type ThemeRegistration, type ThemeDefinition } from './themes/types';
 
 // ============================================================================
@@ -67,6 +68,7 @@ export const LANGUAGE_ALIASES: Record<string, string> = {
 export interface EcSettingsProps {
   ecDefaultShowLineNumbers: boolean;
   ecDefaultWrap: boolean;
+  pdfExportWrap: boolean;
   ecDefaultFrame: 'code' | 'terminal' | 'none' | 'auto';
   ecDefaultCollapseStyle:
     'github' | 'collapsible-start' | 'collapsible-end' | 'collapsible-auto';
@@ -84,6 +86,7 @@ export function createEcEngineConfig(
     themes: [new ExpressiveCodeTheme(input.theme)],
     plugins: [
       customPluginPrism(),
+      pluginPdfExportWrap({ pdfExportWrap: input.settings.pdfExportWrap }),
       pluginCollapsibleSections(),
       pluginTextMarkers(),
       pluginLineNumbers(),

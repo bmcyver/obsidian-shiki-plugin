@@ -94,7 +94,7 @@ export class CodeBlock extends MarkdownRenderChild {
 
     const props: Record<string, unknown> = {};
     if (isPrintMode) {
-      props.wrap = true;
+      props.wrap = this.plugin.settings.pdfExportWrap;
     }
 
     const result = await this.plugin.highlighter.ec.render({

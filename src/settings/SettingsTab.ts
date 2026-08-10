@@ -48,6 +48,21 @@ export class PrismExpressiveCodeSettingTab extends PluginSettingTab {
       });
 
     new Setting(this.containerEl)
+      .setName('PDF 내보내기 자동 줄 바꿈')
+      .setDesc(
+        'PDF 내보내기(프린트 모드) 시 코드 블록의 긴 줄을 Expressive Code 옵션을 통해 자동 줄 바꿈할지 여부를 설정합니다.',
+      )
+      .addToggle((toggle) => {
+        toggle
+          .setValue(this.plugin.settings.pdfExportWrap)
+          .onChange(async (value) => {
+            this.plugin.settings.pdfExportWrap = value;
+            await this.plugin.saveSettings();
+            await this.plugin.reloadHighlighter();
+          });
+      });
+
+    new Setting(this.containerEl)
       .setName('프레임 스타일')
       .setDesc('코드 블록의 기본 프레임 형식을 설정합니다.')
       .addDropdown((dropdown) => {

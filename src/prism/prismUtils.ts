@@ -53,4 +53,3 @@ export function unregisterPrismHook(callback: (env: unknown) => void): void {
     }
   }
 }
-

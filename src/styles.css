@@ -4,31 +4,6 @@ div.expressive-code {
   --pec-code-block-spacing: var(--p-spacing);
 }
 
-.edit-block-button {
-  position: absolute !important;
-  top: 8px !important;
-  right: 8px !important;
-  z-index: 99 !important;
-  pointer-events: all !important;
-  opacity: 0.7;
-  transition: opacity 0.15s ease-in-out;
-}
-
-.edit-block-button:hover {
-  opacity: 1 !important;
-}
-
-.edit-block-button > svg {
-  pointer-events: none !important;
-}
-
-/* Ensure edit block button parent has relative positioning */
-.cm-embed-block,
-.cm-preview-code-block,
-div.expressive-code {
-  position: relative !important;
-}
-
 div.expressive-code code {
   font-variant-ligatures: no-contextual;
 }
@@ -168,12 +143,4 @@ div.cm-preview-code-block {
 .markdown-source-view .pec-code-block[data-indent-level],
 .markdown-preview-view .pec-code-block[data-indent-level] {
   margin-left: calc(var(--pec-indent-level, 0) * var(--list-indent)) !important;
-}
-
-/* PDF Export / Print Rules */
-@media print {
-  div.expressive-code {
-    content-visibility: visible !important;
-    contain: none !important;
-  }
 }
