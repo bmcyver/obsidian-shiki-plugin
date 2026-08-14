@@ -7,8 +7,41 @@ import {
 } from '@codemirror/view';
 import { RangeSetBuilder } from '@codemirror/state';
 import { getPrism, resolvePrismGrammar } from './prismUtils';
-import { flattenTokens, splitTokensIntoLines } from './tokenizer';
+import { flattenTokens, splitTokensIntoLines, type FlatToken } from './tokenizer';
 import { LANGUAGE_ALIASES } from '../config';
+import type * as Prism from 'prismjs';
+
+const MAX_TOKEN_CACHE_SIZE = 200;
+const tokenCache = new Map<string, FlatToken[][]>();
+
+function getOrComputeTokens(
+  prism: typeof Prism,
+  lang: string,
+  fullCode: string,
+  grammar: Prism.Grammar,
+): FlatToken[][] {
+  const cacheKey = `${lang}:::${fullCode}`;
+  let tokens = tokenCache.get(cacheKey);
+  if (tokens) {
+    // Refresh LRU position
+    tokenCache.delete(cacheKey);
+    tokenCache.set(cacheKey, tokens);
+    return tokens;
+  }
+
+  const prismTokens = prism.tokenize(fullCode, grammar);
+  const flatTokens = flattenTokens(prismTokens);
+  tokens = splitTokensIntoLines(flatTokens);
+
+  if (tokenCache.size >= MAX_TOKEN_CACHE_SIZE) {
+    const firstKey = tokenCache.keys().next().value;
+    if (firstKey !== undefined) {
+      tokenCache.delete(firstKey);
+    }
+  }
+  tokenCache.set(cacheKey, tokens);
+  return tokens;
+}
 
 /**
  * Live Preview / Editing view 상에서 PrismJS 전체 블록 단위 토큰화 기반으로
@@ -84,15 +117,26 @@ function createPrismDecorations(view: EditorView): DecorationSet {
   }
 
   for (const block of codeBlocks) {
-    const grammar = resolvePrismGrammar(prism, block.lang);
+    if (block.lines.length === 0) continue;
+    const blockStart = block.lines[0]!.from;
+    const lastLine = block.lines[block.lines.length - 1]!;
+    const blockEnd = lastLine.from + lastLine.text.length;
 
+    if (blockEnd < minVisibleFrom || blockStart > maxVisibleTo) {
+      continue;
+    }
+
+    const grammar = resolvePrismGrammar(prism, block.lang);
     if (!grammar) continue;
 
-    // Reading 모드(CustomPluginPrism)와 동일하게 전체 블록 코드를 한 번에 토큰화
+    // 전체 블록 코드를 추출하여 토큰 캐시(LRU)를 통해 $O(1)$ 즉시 조회
     const fullCode = block.lines.map((l) => l.text).join('\n');
-    const prismTokens = prism.tokenize(fullCode, grammar);
-    const flatTokens = flattenTokens(prismTokens);
-    const lineTokensArray = splitTokensIntoLines(flatTokens);
+    const lineTokensArray = getOrComputeTokens(
+      prism,
+      block.lang,
+      fullCode,
+      grammar,
+    );
 
     for (
       let lineIdx = 0;
@@ -107,6 +151,13 @@ function createPrismDecorations(view: EditorView): DecorationSet {
       if (lineTo < minVisibleFrom || bLine.from > maxVisibleTo) {
         continue;
       }
+
+      // 라인 요소(div.cm-line)에 language-xxx 클래스를 부여하여 기존 Prism 언어별 CSS 규칙을 100% 자동 상속
+      builder.add(
+        bLine.from,
+        bLine.from,
+        Decoration.line({ class: `language-${block.lang}` }),
+      );
 
       let charOffset = 0;
       for (const token of lineTokens) {

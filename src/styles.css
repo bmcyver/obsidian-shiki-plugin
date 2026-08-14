@@ -13,7 +13,9 @@ code[class*='language-'],
 pre[class*='language-'],
 div.expressive-code code,
 div.expressive-code pre,
-div.expressive-code .ec-line {
+div.expressive-code .ec-line,
+div.expressive-code figcaption.header,
+div.expressive-code figcaption.header .title {
   font-family: var(--font-monospace) !important;
 }
 
@@ -88,9 +90,21 @@ div.expressive-code {
   transition: background-color 0.15s ease;
 }
 
+/* cm-prism-token 및 모든 내부 span은 부모 줄의 var(--code-size)를 1회만 상속하여 2중 축소 방지 */
+.markdown-source-view.mod-cm6 .cm-line.HyperMD-codeblock span {
+  font-family: var(--font-monospace) !important;
+  font-size: 1em !important;
+}
+
 .cm-prism-token {
   font-family: var(--font-monospace);
-  font-size: var(--code-size);
+  font-size: 1em !important;
+}
+
+.markdown-source-view.mod-cm6 .cm-line.HyperMD-codeblock :is(span:not(.cm-prism-token), .cm-variable, .cm-def, .cm-property) {
+  color: inherit !important;
+  font-style: inherit;
+  font-weight: inherit;
 }
 
 /* Hide empty opening/closing fenced code block lines in Live Preview when not active */

@@ -9,20 +9,42 @@ export interface FenceInfo {
   indent: string;
 }
 
-function getLineAt(text: string, lineIndex: number): string | undefined {
+function extractLinesRange(
+  text: string,
+  startLine: number,
+  endLine: number,
+): string[] {
+  const lines: string[] = [];
+  let curLine = 0;
   let startIdx = 0;
-  for (let i = 0; i < lineIndex; i++) {
+
+  // Jump directly to startLine in a single linear pass
+  while (curLine < startLine && startIdx < text.length) {
     const nextNewline = text.indexOf('\n', startIdx);
     if (nextNewline === -1) {
-      return undefined;
+      return lines;
     }
     startIdx = nextNewline + 1;
+    curLine++;
   }
-  const endIdx = text.indexOf('\n', startIdx);
-  if (endIdx === -1) {
-    return text.slice(startIdx);
+
+  // Collect only the target slice from startLine to endLine
+  while (curLine <= endLine && startIdx <= text.length) {
+    const nextNewline = text.indexOf('\n', startIdx);
+    if (nextNewline === -1) {
+      let line = text.slice(startIdx);
+      if (line.endsWith('\r')) line = line.slice(0, -1);
+      lines.push(line);
+      break;
+    }
+    let line = text.slice(startIdx, nextNewline);
+    if (line.endsWith('\r')) line = line.slice(0, -1);
+    lines.push(line);
+    startIdx = nextNewline + 1;
+    curLine++;
   }
-  return text.slice(startIdx, endIdx);
+
+  return lines;
 }
 
 /**
@@ -39,18 +61,28 @@ export function findFenceInfo(
       ? existingSectionInfo
       : ctx.getSectionInfo(containerEl);
 
-  if (!sectionInfo) {
+  if (!sectionInfo || !sectionInfo.text) {
+    return { meta: '', level: 0, indent: '' };
+  }
+
+  const start = Math.max(0, sectionInfo.lineStart);
+  // Lookahead 1 extra line to inspect nextLine fence boundary
+  const end = Math.max(start, sectionInfo.lineEnd + 1);
+
+  // Extract only the code block slice [start, end] rather than splitting the entire document
+  const targetLines = extractLinesRange(sectionInfo.text, start, end);
+  if (targetLines.length === 0) {
     return { meta: '', level: 0, indent: '' };
   }
 
   const firstSourceLine =
     source
-      .split('\n')
+      .split(/\r?\n/)
       .map((l) => l.trim())
       .find((l) => l.length > 0) || '';
 
-  for (let i = sectionInfo.lineStart; i <= sectionInfo.lineEnd; i++) {
-    const line = getLineAt(sectionInfo.text, i);
+  for (let i = 0; i < targetLines.length; i++) {
+    const line = targetLines[i];
     if (line === undefined) break;
 
     const trimmed = line.trim();
@@ -66,7 +98,8 @@ export function findFenceInfo(
         markerLength++;
       }
 
-      const nextLine = getLineAt(sectionInfo.text, i + 1)?.trim() || '';
+      const nextLine =
+        (i + 1 < targetLines.length ? targetLines[i + 1]?.trim() : '') || '';
       const isNextLineFence =
         nextLine.startsWith('```') || nextLine.startsWith('~~~');
 

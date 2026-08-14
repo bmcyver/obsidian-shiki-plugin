@@ -8,6 +8,7 @@ import {
   findFenceInfo,
   stripCommonIndentation,
   estimateCodeBlockHeight,
+  type FenceInfo,
 } from './CodeBlockUtils';
 
 export class CodeBlock extends MarkdownRenderChild {
@@ -18,7 +19,7 @@ export class CodeBlock extends MarkdownRenderChild {
   currentFilePath: string;
   isLoaded = false;
 
-  cachedMetaString: string;
+  private currentFenceInfo: FenceInfo = { meta: '', level: 0, indent: '' };
   rendered = false;
   private renderedSource = '';
   private renderedMeta = '';
@@ -37,35 +38,14 @@ export class CodeBlock extends MarkdownRenderChild {
     this.language = language;
     this.ctx = ctx;
     this.currentFilePath = ctx.sourcePath;
-
-    this.cachedMetaString = this.getMetaString();
   }
 
-  private getMetaString(
-    sectionInfo?: ReturnType<MarkdownPostProcessorContext['getSectionInfo']>,
-  ): string {
-    return findFenceInfo(this.ctx, this.containerEl, this.source, sectionInfo)
-      .meta;
-  }
-
-  public async startRender(): Promise<void> {
-    if (this.rendered) return;
-    await this.render(this.cachedMetaString);
-  }
-
-  private async render(metaString: string): Promise<void> {
+  private async render(fenceInfo: FenceInfo): Promise<void> {
     if (!this.plugin.highlighter?.ec) {
       return;
     }
 
-    const sectionInfo = this.ctx.getSectionInfo(this.containerEl);
-    const { level, indent: fenceIndent } = findFenceInfo(
-      this.ctx,
-      this.containerEl,
-      this.source,
-      sectionInfo,
-    );
-
+    const { meta: metaString, level, indent: fenceIndent } = fenceInfo;
     const cleanedSource = stripCommonIndentation(this.source, fenceIndent);
 
     // Early return if already rendered with the exact same content & meta
@@ -134,18 +114,30 @@ export class CodeBlock extends MarkdownRenderChild {
   }
 
   public async rerenderOnNoteChange(): Promise<void> {
-    const sectionInfo = this.ctx.getSectionInfo(this.containerEl);
-    const newMetaString = this.getMetaString(sectionInfo);
-    if (newMetaString !== this.cachedMetaString) {
-      this.cachedMetaString = newMetaString;
+    const newFenceInfo = findFenceInfo(
+      this.ctx,
+      this.containerEl,
+      this.source,
+    );
+    if (
+      newFenceInfo.meta !== this.currentFenceInfo.meta ||
+      newFenceInfo.level !== this.currentFenceInfo.level ||
+      newFenceInfo.indent !== this.currentFenceInfo.indent
+    ) {
+      this.currentFenceInfo = newFenceInfo;
       if (this.rendered) {
-        await this.render(newMetaString);
+        await this.render(newFenceInfo);
       }
     }
   }
 
   public async forceRerender(): Promise<void> {
-    await this.render(this.cachedMetaString);
+    this.currentFenceInfo = findFenceInfo(
+      this.ctx,
+      this.containerEl,
+      this.source,
+    );
+    await this.render(this.currentFenceInfo);
   }
 
   public onload(): void {
@@ -153,19 +145,17 @@ export class CodeBlock extends MarkdownRenderChild {
     this.isLoaded = true;
     this.plugin.codeBlockManager.add(this);
 
-    const sectionInfo = this.ctx.getSectionInfo(this.containerEl);
-    const { indent: fenceIndent } = findFenceInfo(
+    this.currentFenceInfo = findFenceInfo(
       this.ctx,
       this.containerEl,
       this.source,
-      sectionInfo,
     );
 
     // Estimate height to prevent Cumulative Layout Shift (CLS)
     const estimatedHeight = estimateCodeBlockHeight(
       this.source,
-      this.cachedMetaString,
-      fenceIndent,
+      this.currentFenceInfo.meta,
+      this.currentFenceInfo.indent,
     );
     this.containerEl.style.minHeight = `${estimatedHeight}px`;
     this.containerEl.style.setProperty(
@@ -174,7 +164,7 @@ export class CodeBlock extends MarkdownRenderChild {
     );
 
     // Render immediately on load
-    void this.startRender();
+    void this.render(this.currentFenceInfo);
   }
 
   public onunload(): void {

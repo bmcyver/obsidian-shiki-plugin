@@ -95,6 +95,7 @@ export function createEcEngineConfig(
     styleOverrides: {
       codeFontFamily: 'var(--font-monospace)',
       codeFontSize: 'var(--code-size)',
+      uiFontFamily: 'var(--font-monospace)',
       borderWidth: '0px',
       borderColor: 'transparent',
       frames: {
