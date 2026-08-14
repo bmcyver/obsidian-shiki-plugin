@@ -1,7 +1,7 @@
 {
   "id": "obsidian-prism-expressive-code",
   "name": "Prism Expressive Code",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "minAppVersion": "1.10.0",
   "description": "An Obsidian plugin that provides syntax highlighting using Prism and Expressive Code.",
   "author": "bmcyver",
