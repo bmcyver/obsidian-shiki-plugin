@@ -102,6 +102,11 @@ pre[class*='language-'] {
   color: hsl(220, 14%, 71%);
 }
 
+/* [CUSTOM MODIFICATION] Fallback property-access (e.g. obj.prop) to base text color identically to TypeScript */
+.token.property-access:not(.function):not(.method) {
+  color: hsl(220, 14%, 71%);
+}
+
 .token.attr-name,
 .token.class-name,
 .token.boolean,

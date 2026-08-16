@@ -101,10 +101,17 @@ div.expressive-code {
   font-size: 1em !important;
 }
 
-.markdown-source-view.mod-cm6 .cm-line.HyperMD-codeblock :is(span:not(.cm-prism-token), .cm-variable, .cm-def, .cm-property) {
+.markdown-source-view.mod-cm6
+  .cm-line.HyperMD-codeblock
+  span:not(.cm-prism-token) {
   color: inherit !important;
   font-style: inherit;
   font-weight: inherit;
+}
+
+/* Ensure property-access (e.g. obj.prop) falls back to base text color identically to TypeScript */
+.token.property-access:not(.function):not(.method) {
+  color: inherit;
 }
 
 /* Hide empty opening/closing fenced code block lines in Live Preview when not active */

@@ -7,7 +7,11 @@ import {
 } from '@codemirror/view';
 import { RangeSetBuilder } from '@codemirror/state';
 import { getPrism, resolvePrismGrammar } from './prismUtils';
-import { flattenTokens, splitTokensIntoLines, type FlatToken } from './tokenizer';
+import {
+  flattenTokens,
+  splitTokensIntoLines,
+  type FlatToken,
+} from './tokenizer';
 import { LANGUAGE_ALIASES } from '../config';
 import type * as Prism from 'prismjs';
 

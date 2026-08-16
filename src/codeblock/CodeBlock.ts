@@ -114,11 +114,7 @@ export class CodeBlock extends MarkdownRenderChild {
   }
 
   public async rerenderOnNoteChange(): Promise<void> {
-    const newFenceInfo = findFenceInfo(
-      this.ctx,
-      this.containerEl,
-      this.source,
-    );
+    const newFenceInfo = findFenceInfo(this.ctx, this.containerEl, this.source);
     if (
       newFenceInfo.meta !== this.currentFenceInfo.meta ||
       newFenceInfo.level !== this.currentFenceInfo.level ||
