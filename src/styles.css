@@ -109,11 +109,6 @@ div.expressive-code {
   font-weight: inherit;
 }
 
-/* Ensure property-access (e.g. obj.prop) falls back to base text color identically to TypeScript */
-.token.property-access:not(.function):not(.method) {
-  color: inherit;
-}
-
 /* Hide empty opening/closing fenced code block lines in Live Preview when not active */
 .markdown-source-view.mod-cm6
   :is(
