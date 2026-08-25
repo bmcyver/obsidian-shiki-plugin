@@ -75,7 +75,7 @@ export default class PrismExpressiveCodePlugin extends Plugin {
         const win = (winInfo as unknown as { win: Window }).win || winInfo;
         if (win && win.document) {
           void this.highlighter.injectStyles(win.document);
-          win.addEventListener('unload', () => {
+          this.registerDomEvent(win, 'unload', () => {
             this.highlighter.removeStyles(win.document);
           });
         }

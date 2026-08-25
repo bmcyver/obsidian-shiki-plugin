@@ -47,6 +47,16 @@ function getOrComputeTokens(
   return tokens;
 }
 
+interface BlockLine {
+  text: string;
+  from: number;
+}
+
+interface CodeBlockInfo {
+  lang: string;
+  lines: BlockLine[];
+}
+
 /**
  * Live Preview / Editing view 상에서 PrismJS 전체 블록 단위 토큰화 기반으로
  * Reading 모드(Expressive Code)와 100% 동일하게 하이라이팅을 제공하는 CodeMirror 6 Extension
@@ -58,31 +68,34 @@ function createPrismDecorations(view: EditorView): DecorationSet {
   const visibleRanges = view.visibleRanges;
   if (visibleRanges.length === 0) return Decoration.none;
 
+  const doc = view.state.doc;
   const minVisibleFrom = Math.max(0, visibleRanges[0]!.from - 500);
   const maxVisibleTo = Math.min(
-    view.state.doc.length,
+    doc.length,
     visibleRanges[visibleRanges.length - 1]!.to + 500,
   );
 
-  const builder = new RangeSetBuilder<Decoration>();
-  const doc = view.state.doc;
+  const startLineNum = doc.lineAt(minVisibleFrom).number;
+  const endLineNum = doc.lineAt(maxVisibleTo).number;
 
-  interface BlockLine {
-    text: string;
-    from: number;
+  // 1. 뷰포트 상단 영역에 걸쳐 있는 코드 블록 시작 펜스를 찾기 위해 역방향 스캔
+  let scanStartLine = startLineNum;
+  for (let i = startLineNum; i >= 1; i--) {
+    const line = doc.line(i);
+    const trimmed = line.text.trim();
+    if (trimmed.startsWith('```') || trimmed.startsWith('~~~')) {
+      scanStartLine = i;
+      break;
+    }
   }
 
-  interface CodeBlockInfo {
-    lang: string;
-    lines: BlockLine[];
-  }
-
+  // 2. scanStartLine부터 endLineNum (및 코드블록 종료)까지 뷰포트 주변만 O(k)로 수집
   const codeBlocks: CodeBlockInfo[] = [];
   let inCodeBlock = false;
   let currentLang = '';
   let currentLines: BlockLine[] = [];
 
-  for (let i = 1; i <= doc.lines; i++) {
+  for (let i = scanStartLine; i <= doc.lines; i++) {
     const line = doc.line(i);
     const trimmed = line.text.trim();
 
@@ -103,22 +116,25 @@ function createPrismDecorations(view: EditorView): DecorationSet {
           });
         }
         currentLines = [];
+        if (i > endLineNum) {
+          break;
+        }
       }
     } else if (inCodeBlock) {
       currentLines.push({ text: line.text, from: line.from });
-    } else if (line.from > maxVisibleTo) {
-      // 바깥 영역이고 코드블록 안이 아닌 경우에만 빠른 종료
+    } else if (i > endLineNum) {
       break;
     }
   }
 
-  // 파일 끝까지 닫는 펜스가 없는 코드블록 처리
   if (inCodeBlock && currentLang && currentLines.length > 0) {
     codeBlocks.push({
       lang: currentLang,
       lines: currentLines,
     });
   }
+
+  const builder = new RangeSetBuilder<Decoration>();
 
   for (const block of codeBlocks) {
     if (block.lines.length === 0) continue;
@@ -133,7 +149,7 @@ function createPrismDecorations(view: EditorView): DecorationSet {
     const grammar = resolvePrismGrammar(prism, block.lang);
     if (!grammar) continue;
 
-    // 전체 블록 코드를 추출하여 토큰 캐시(LRU)를 통해 $O(1)$ 즉시 조회
+    // 전체 블록 코드를 추출하여 토큰 캐시(LRU)를 통해 O(1) 즉시 조회
     const fullCode = block.lines.map((l) => l.text).join('\n');
     const lineTokensArray = getOrComputeTokens(
       prism,
@@ -156,7 +172,7 @@ function createPrismDecorations(view: EditorView): DecorationSet {
         continue;
       }
 
-      // 라인 요소(div.cm-line)에 language-xxx 클래스를 부여하여 기존 Prism 언어별 CSS 규칙을 100% 자동 상속
+      // 라인 요소(div.cm-line)에 language-xxx 클래스를 부여하여 기존 Prism 언어별 CSS 규칙 100% 자동 상속
       builder.add(
         bLine.from,
         bLine.from,

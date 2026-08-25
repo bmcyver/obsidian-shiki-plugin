@@ -17,8 +17,6 @@ export class PrismExpressiveCodeSettingTab extends PluginSettingTab {
 
     const themes = THEME_DISPLAY_NAMES;
 
-    new Setting(this.containerEl).setName('코드 블록 기본 설정').setHeading();
-
     new Setting(this.containerEl)
       .setName('줄 번호 표시')
       .setDesc('코드 블록에 기본적으로 줄 번호를 표시할지 여부를 설정합니다.')

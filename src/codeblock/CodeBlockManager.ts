@@ -47,10 +47,22 @@ export class CodeBlockManager {
   }
 
   public remove(codeBlock: CodeBlock): void {
-    for (const [path, set] of this.activeCodeBlocks.entries()) {
-      if (set.has(codeBlock)) {
-        set.delete(codeBlock);
-        if (set.size === 0) {
+    const filePath = codeBlock.currentFilePath;
+    const set = this.activeCodeBlocks.get(filePath);
+
+    // 1차: Direct Lookup 시도 (O(1))
+    if (set && set.has(codeBlock)) {
+      set.delete(codeBlock);
+      if (set.size === 0) {
+        this.activeCodeBlocks.delete(filePath);
+      }
+      return;
+    }
+
+    // 2차 Fallback: 경로 불일치 엣지 케이스 시 전체 검색으로 인스턴스 정화
+    for (const [path, blockSet] of this.activeCodeBlocks.entries()) {
+      if (blockSet.delete(codeBlock)) {
+        if (blockSet.size === 0) {
           this.activeCodeBlocks.delete(path);
         }
         break;
